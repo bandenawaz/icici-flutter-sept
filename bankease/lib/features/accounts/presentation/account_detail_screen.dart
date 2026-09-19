@@ -1,4 +1,6 @@
+import 'package:bankease/features/accounts/state/account_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:bankease/app/routes.dart';
@@ -8,14 +10,14 @@ import 'package:bankease/core/widgets/route_error_screen.dart';
 import 'package:bankease/features/dashboard/widgets/balance_card.dart';
 
 /// Receives only an ID from the URL and looks the account up itself.
-class AccountDetailScreen extends StatelessWidget {
+class AccountDetailScreen extends ConsumerWidget {
   const AccountDetailScreen({super.key, required this.accountId});
 
   final String accountId;
 
   @override
-  Widget build(BuildContext context) {
-    final account = MockData.accountById(accountId);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final account = ref.watch(accountByIdProvider(accountId));
     if (account == null) {
       return RouteErrorScreen(message: 'Account $accountId was not found.');
     }

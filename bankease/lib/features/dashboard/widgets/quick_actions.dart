@@ -22,13 +22,15 @@ class QuickActions extends StatelessWidget {
         () => context.push(AppRoutes.statement(MockData.accounts.first.id)),
       ),
       _QuickAction(Icons.person_add_alt, 'Add payee', () => _addPayee(context)),
-      _QuickAction(Icons.lightbulb_outline, 'Pay bills', () => _comingSoon(context)),
+      _QuickAction(
+          Icons.lightbulb_outline, 'Pay bills', () => _comingSoon(context)),
     ];
 
     return GridView.count(
       crossAxisCount: 4,
       shrinkWrap: true, // size to its content inside the page ListView
-      physics: const NeverScrollableScrollPhysics(), // the page scrolls, not the grid
+      physics:
+          const NeverScrollableScrollPhysics(), // the page scrolls, not the grid
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
       childAspectRatio: 0.8,
@@ -43,10 +45,7 @@ class QuickActions extends StatelessWidget {
     if (added == null || !context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          '${added.name} saved. It will show in Transfer once we add '
-          'shared state in Module 3.',
-        ),
+        content: Text('${added.name} added to your payees'),
       ),
     );
   }

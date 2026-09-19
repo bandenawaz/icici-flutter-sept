@@ -1,21 +1,24 @@
+import 'package:bankease/features/accounts/state/account_provider.dart';
+import 'package:bankease/features/transactions/state/transactions_provider.dart';
 import 'package:flutter/material.dart';
 
 import 'package:bankease/core/data/mock_data.dart';
 import 'package:bankease/core/widgets/route_error_screen.dart';
 import 'package:bankease/features/transactions/widgets/transaction_tile.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class StatementScreen extends StatelessWidget {
+class StatementScreen extends ConsumerWidget {
   const StatementScreen({super.key, required this.accountId});
 
   final String accountId;
 
   @override
-  Widget build(BuildContext context) {
-    final account = MockData.accountById(accountId);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final account = ref.watch(accountByIdProvider(accountId));
     if (account == null) {
       return RouteErrorScreen(message: 'Account $accountId was not found.');
     }
-    final txns = MockData.transactionsFor(accountId);
+    final txns = ref.watch(accountTransactionsProvider(accountId));
 
     return Scaffold(
       appBar: AppBar(title: Text('Statement · ${account.maskedNumber}')),

@@ -1,4 +1,8 @@
+import 'package:bankease/features/accounts/state/account_provider.dart';
+import 'package:bankease/features/transactions/domain/txn.dart';
+import 'package:bankease/features/transactions/state/transactions_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:bankease/app/routes.dart';
@@ -6,16 +10,17 @@ import 'package:bankease/core/utils/money.dart';
 import 'package:bankease/core/widgets/info_row.dart';
 import 'package:bankease/features/transfer/domain/transfer_draft.dart';
 
-class TransferReviewScreen extends StatefulWidget {
+class TransferReviewScreen extends ConsumerStatefulWidget {
   const TransferReviewScreen({super.key, required this.draft});
 
   final TransferDraft draft;
 
   @override
-  State<TransferReviewScreen> createState() => _TransferReviewScreenState();
+  ConsumerState<TransferReviewScreen> createState() =>
+      _TransferReviewScreenState();
 }
 
-class _TransferReviewScreenState extends State<TransferReviewScreen> {
+class _TransferReviewScreenState extends ConsumerState<TransferReviewScreen> {
   bool _processing = false;
 
   Future<void> _confirm() async {
@@ -23,13 +28,36 @@ class _TransferReviewScreenState extends State<TransferReviewScreen> {
     await Future<void>.delayed(const Duration(seconds: 1)); // fake bank call
     if (!mounted) return;
 
+    final d = widget.draft;
+
+    //1. Change app state: take the money out
+    final ok =
+        ref.read(accountProvider.notifier).debit(d.from.id, d.amountPaise);
+    if (!ok) {
+      setState(() => _processing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Insufficent funds')),
+      );
+      return;
+    }
+
+    //2. Record the transaction in the statement
     final now = DateTime.now();
     final receipt = TransferReceipt(
-      draft: widget.draft,
+      draft: d,
       referenceId: 'BE${now.millisecondsSinceEpoch}',
       completedAt: now,
     );
-    // go: replaces Transfer + Review, so Back can't re-submit the payment.
+    ref.read(transactionsProvider.notifier).add(
+          Txn(
+              id: receipt.referenceId,
+              accountId: d.from.id,
+              title: 'To ${d.to.name}',
+              amountPaise: -d.amountPaise,
+              date: now,
+              mode: "IMPS"),
+        );
+    // 3. navigate: replaces Transfer + Review, so Back can't re-submit the payment.
     context.go(AppRoutes.transferSuccess, extra: receipt);
   }
 

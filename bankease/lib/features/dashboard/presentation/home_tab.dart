@@ -1,4 +1,7 @@
+import 'package:bankease/features/accounts/state/account_provider.dart';
+import 'package:bankease/features/transactions/state/transactions_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:bankease/app/routes.dart';
@@ -8,13 +11,15 @@ import 'package:bankease/features/dashboard/widgets/balance_card.dart';
 import 'package:bankease/features/dashboard/widgets/quick_actions.dart';
 import 'package:bankease/features/transactions/widgets/transaction_tile.dart';
 
-class HomeTab extends StatelessWidget {
+class HomeTab extends ConsumerWidget {
   const HomeTab({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final primary = MockData.accounts.first;
-    final recent = MockData.transactionsFor(primary.id).take(5).toList();
+  Widget build(BuildContext context, WidgetRef ref) {
+    //watch: "rebuild me when its state changes"
+    final primary = ref.watch(accountProvider).first;
+    final recent =
+        ref.watch(accountTransactionsProvider(primary.id)).take(5).toList();
 
     // The whole page is one ListView, so nothing inside needs its own scroll.
     return ListView(

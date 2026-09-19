@@ -1,18 +1,21 @@
+import 'package:bankease/features/transfer/state/beneficiaries_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:bankease/core/utils/validators.dart';
 import 'package:bankease/features/transfer/domain/beneficiary.dart';
 
-class AddBeneficiaryScreen extends StatefulWidget {
+class AddBeneficiaryScreen extends ConsumerStatefulWidget {
   const AddBeneficiaryScreen({super.key});
 
   @override
-  State<AddBeneficiaryScreen> createState() => _AddBeneficiaryScreenState();
+  ConsumerState<AddBeneficiaryScreen> createState() =>
+      _AddBeneficiaryScreenState();
 }
 
-class _AddBeneficiaryScreenState extends State<AddBeneficiaryScreen> {
+class _AddBeneficiaryScreenState extends ConsumerState<AddBeneficiaryScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _accountController = TextEditingController();
@@ -37,6 +40,17 @@ class _AddBeneficiaryScreenState extends State<AddBeneficiaryScreen> {
       accountNumber: _accountController.text.trim(),
       ifsc: _ifscController.text.trim().toUpperCase(),
     );
+
+    // Save to shared state, so every screen sees the new payee
+    final savedPayee =
+        ref.read(beneficiariesProvider.notifier).add(beneficiary);
+
+    if (!savedPayee) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("This account is already saved")),
+      );
+      return;
+    }
     // Send the result back to whichever screen pushed us.
     context.pop(beneficiary);
   }

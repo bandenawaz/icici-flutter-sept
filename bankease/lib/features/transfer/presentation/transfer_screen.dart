@@ -1,5 +1,8 @@
+import 'package:bankease/features/accounts/state/account_provider.dart';
+import 'package:bankease/features/transfer/state/beneficiaries_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:bankease/app/routes.dart';
@@ -10,24 +13,24 @@ import 'package:bankease/features/accounts/domain/account.dart';
 import 'package:bankease/features/transfer/domain/beneficiary.dart';
 import 'package:bankease/features/transfer/domain/transfer_draft.dart';
 
-class TransferScreen extends StatefulWidget {
+class TransferScreen extends ConsumerStatefulWidget {
   const TransferScreen({super.key, this.fromAccountId});
 
   /// Comes from the query string: /dashboard/transfer?from=BE2001
   final String? fromAccountId;
 
   @override
-  State<TransferScreen> createState() => _TransferScreenState();
+  ConsumerState<TransferScreen> createState() => _TransferScreenState();
 }
 
-class _TransferScreenState extends State<TransferScreen> {
+class _TransferScreenState extends ConsumerState<TransferScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _remarksController = TextEditingController();
 
   // A local copy: beneficiaries added here are visible only on this screen
   // until Module 3 introduces shared state.
-  final List<Beneficiary> _beneficiaries = [...MockData.beneficiaries];
+  //final List<Beneficiary> _beneficiaries = [...MockData.beneficiaries];
 
   late String _fromId;
   Beneficiary? _selected;
@@ -37,9 +40,10 @@ class _TransferScreenState extends State<TransferScreen> {
   void initState() {
     super.initState();
     final requested = widget.fromAccountId;
-    _fromId = requested != null && MockData.accountById(requested) != null
-        ? requested
-        : MockData.accounts.first.id;
+    _fromId =
+        requested != null && ref.read(accountByIdProvider(requested)) != null
+            ? requested
+            : ref.read(accountProvider).first.id;
   }
 
   @override
@@ -49,14 +53,13 @@ class _TransferScreenState extends State<TransferScreen> {
     super.dispose();
   }
 
-  Account get _from => MockData.accountById(_fromId)!;
+  //Account get _from => ref.read(accountByIdProvider(_fromId))!;
 
   Future<void> _addBeneficiary() async {
     // push<T> returns whatever the next screen passes to context.pop(result).
     final added = await context.push<Beneficiary>(AppRoutes.addBeneficiary);
     if (!mounted || added == null) return; // null = user pressed Back
     setState(() {
-      _beneficiaries.add(added);
       _selected = added;
       _showPayeeError = false;
     });
@@ -71,7 +74,7 @@ class _TransferScreenState extends State<TransferScreen> {
     if (!formValid || _selected == null) return;
 
     final draft = TransferDraft(
-      from: _from,
+      from: ref.read(accountByIdProvider(_fromId))!, //read: event handler
       to: _selected!,
       amountPaise: parseRupeesToPaise(_amountController.text)!,
       remarks: _remarksController.text.trim(),
@@ -84,6 +87,10 @@ class _TransferScreenState extends State<TransferScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+
+    //watch: rebuild this screen when these changes
+    final beneficiaries = ref.watch(beneficiariesProvider);
+    final Account from = ref.watch(accountByIdProvider(_fromId))!;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Transfer money')),
@@ -100,7 +107,7 @@ class _TransferScreenState extends State<TransferScreen> {
               const SizedBox(height: 8),
               SegmentedButton<String>(
                 segments: [
-                  for (final account in MockData.accounts)
+                  for (final account in ref.watch(accountProvider))
                     ButtonSegment(
                       value: account.id,
                       label: Text(account.type.label),
@@ -112,7 +119,7 @@ class _TransferScreenState extends State<TransferScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                '${_from.maskedNumber} · Available ${formatRupees(_from.balancePaise)}',
+                '${from.maskedNumber} · Available ${formatRupees(from.balancePaise)}',
                 style: theme.textTheme.bodySmall,
               ),
               const SizedBox(height: 20),
@@ -122,7 +129,7 @@ class _TransferScreenState extends State<TransferScreen> {
                 margin: EdgeInsets.zero,
                 child: Column(
                   children: [
-                    for (final b in _beneficiaries)
+                    for (final b in beneficiaries)
                       ListTile(
                         leading: CircleAvatar(child: Text(b.initials)),
                         title: Text(
@@ -173,7 +180,7 @@ class _TransferScreenState extends State<TransferScreen> {
                 ],
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 validator: (value) =>
-                    Validators.amount(value, balancePaise: _from.balancePaise),
+                    Validators.amount(value, balancePaise: from.balancePaise),
               ),
               const SizedBox(height: 16),
               TextFormField(

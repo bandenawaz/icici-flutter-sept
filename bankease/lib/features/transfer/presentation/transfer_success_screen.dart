@@ -1,4 +1,6 @@
+import 'package:bankease/features/accounts/state/account_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:bankease/app/routes.dart';
@@ -7,14 +9,17 @@ import 'package:bankease/core/utils/money.dart';
 import 'package:bankease/core/widgets/info_row.dart';
 import 'package:bankease/features/transfer/domain/transfer_draft.dart';
 
-class TransferSuccessScreen extends StatelessWidget {
+class TransferSuccessScreen extends ConsumerWidget {
   const TransferSuccessScreen({super.key, required this.receipt});
 
   final TransferReceipt receipt;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final d = receipt.draft;
+
+    //The balance AFTER the transfer, read from shared state
+    final balanceNow = ref.watch(accountByIdProvider(d.from.id))?.balancePaise;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -47,6 +52,10 @@ class TransferSuccessScreen extends StatelessWidget {
                         value: formatDateTime(receipt.completedAt),
                       ),
                       InfoRow(label: 'From', value: d.from.maskedNumber),
+                      if (balanceNow != null)
+                        InfoRow(
+                            label: "Balance now",
+                            value: formatRupees(balanceNow)),
                     ],
                   ),
                 ),
