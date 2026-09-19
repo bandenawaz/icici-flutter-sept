@@ -1,13 +1,11 @@
+import 'package:bankease/features/auth/state/seesion_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:bankease/app/routes.dart';
-import 'package:bankease/core/data/mock_data.dart';
-
-class ProfileTab extends StatelessWidget {
+class ProfileTab extends ConsumerWidget {
   const ProfileTab({super.key});
 
-  Future<void> _confirmLogout(BuildContext context) async {
+  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -25,16 +23,23 @@ class ProfileTab extends StatelessWidget {
         ],
       ),
     );
-    // go: clears the dashboard from the stack so Back can't reveal it.
-    if (confirmed == true && context.mounted) context.go(AppRoutes.login);
+
+    if (confirmed == true && context.mounted) {
+      ref.read(sessionProvider.notifier).logout();
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final initials = MockData.customerName
-        .split(' ')
-        .map((part) => part[0])
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(sessionProvider);
+    final name =
+        session.customerName.isNotEmpty ? session.customerName : 'Customer';
+    final initials = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
         .take(2)
+        .map((part) => part[0].toUpperCase())
         .join();
 
     return ListView(
@@ -44,27 +49,32 @@ class ProfileTab extends StatelessWidget {
         Center(
           child: CircleAvatar(
             radius: 40,
-            child: Text(initials, style: const TextStyle(fontSize: 28)),
+            child: Text(
+              initials.isEmpty ? 'U' : initials,
+              style: const TextStyle(fontSize: 28),
+            ),
           ),
         ),
         const SizedBox(height: 12),
         Center(
           child: Text(
-            MockData.customerName,
+            name,
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
         const SizedBox(height: 24),
-        const Card(
+        Card(
           child: Column(
             children: [
               ListTile(
-                leading: Icon(Icons.badge_outlined),
-                title: Text('Customer ID'),
-                subtitle: Text(MockData.customerId),
+                leading: const Icon(Icons.badge_outlined),
+                title: const Text('Customer ID'),
+                subtitle: Text(session.customerId.isEmpty
+                    ? 'Not available'
+                    : session.customerId),
               ),
-              Divider(height: 1),
-              ListTile(
+              const Divider(height: 1),
+              const ListTile(
                 leading: Icon(Icons.location_on_outlined),
                 title: Text('Home branch'),
                 subtitle: Text('Bijapur Main'),
@@ -74,7 +84,7 @@ class ProfileTab extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         FilledButton.tonalIcon(
-          onPressed: () => _confirmLogout(context),
+          onPressed: () => _confirmLogout(context, ref),
           icon: const Icon(Icons.logout),
           label: const Text('Log out'),
         ),

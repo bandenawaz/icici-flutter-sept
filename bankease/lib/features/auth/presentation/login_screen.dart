@@ -1,18 +1,20 @@
+import 'package:bankease/features/auth/state/seesion_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:bankease/app/routes.dart';
 import 'package:bankease/core/utils/validators.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _customerIdController = TextEditingController();
   final _pinController = TextEditingController();
@@ -32,7 +34,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _submitting = true);
-    await Future<void>.delayed(const Duration(milliseconds: 800)); // fake server call
+    await Future<void>.delayed(
+        const Duration(milliseconds: 800)); // fake server call
     if (!mounted) return; // the screen may have closed while we waited
     setState(() => _submitting = false);
 
@@ -44,7 +47,11 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     // go (not push): login is removed, so Back can't return to it.
-    context.go(AppRoutes.dashboard);
+    // context.go(AppRoutes.dashboard);
+    ref.read(sessionProvider.notifier).login(
+          customerId: _customerIdController.text,
+          customerName: 'Customer ${_customerIdController.text}',
+        );
   }
 
   @override
@@ -104,7 +111,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         suffixIcon: IconButton(
                           tooltip: _obscurePin ? 'Show PIN' : 'Hide PIN',
                           icon: Icon(
-                            _obscurePin ? Icons.visibility : Icons.visibility_off,
+                            _obscurePin
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                           ),
                           onPressed: () =>
                               setState(() => _obscurePin = !_obscurePin),
