@@ -26,4 +26,14 @@ class Account {
   final int balancePaise;
 
   String get maskedNumber => 'XXXX${number.substring(number.length - 4)}';
+
+  /// Returns a NEW Account with a different balance. The original is untouched
+  Account copyWith({int? balancePaise}) => Account(
+      id: id,
+      type: type,
+      holderName: holderName,
+      number: number,
+      ifsc: ifsc,
+      branch: branch,
+      balancePaise: balancePaise ?? this.balancePaise);
 }

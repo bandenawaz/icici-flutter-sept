@@ -1,5 +1,6 @@
 /// Money is ALWAYS an int in paise inside BankEase.
 /// These helpers are the only place we convert to and from rupees.
+library;
 
 /// 1234567890 -> '₹1,23,45,678.90'
 String formatRupees(int paise, {bool showSign = false}) {
