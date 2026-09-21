@@ -1,0 +1,23 @@
+name: bankease
+description: "BankEase - a Flutter banking app built step by step (Module 4: API integration)."
+publish_to: 'none'
+version: 0.8.0+8
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  go_router: ^14.6.0
+  flutter_riverpod: ^2.6.1
+  dio: ^5.11.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

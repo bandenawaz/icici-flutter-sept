@@ -1,0 +1,72 @@
+### BankEase API — open in VS Code with the "REST Client" extension
+@host = http://localhost:4000/api/v1
+
+### Health
+GET {{host}}/ping
+
+### Login (copy the token from the response)
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{ "customerId": "10012345", "pin": "1234" }
+
+@token = {{login.response.body.token}}
+
+### Accounts
+GET {{host}}/accounts
+Authorization: Bearer {{token}}
+
+### One account
+GET {{host}}/accounts/BE1001
+Authorization: Bearer {{token}}
+
+### Statement (paged)
+GET {{host}}/accounts/BE1001/transactions?page=0&size=20
+Authorization: Bearer {{token}}
+
+### Beneficiaries
+GET {{host}}/beneficiaries
+Authorization: Bearer {{token}}
+
+### Add a beneficiary
+POST {{host}}/beneficiaries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Kiran Rao", "accountNumber": "555666777888", "ifsc": "BKEN0009999" }
+
+### Transfer ₹500 (change the key for each new transfer)
+POST {{host}}/transfers
+Authorization: Bearer {{token}}
+Idempotency-Key: demo-key-1
+Content-Type: application/json
+
+{ "fromAccountId": "BE1001", "beneficiaryId": "B1", "amountPaise": 50000, "remarks": "chai" }
+
+### Replay the SAME key: same receipt, money moves only once
+POST {{host}}/transfers
+Authorization: Bearer {{token}}
+Idempotency-Key: demo-key-1
+Content-Type: application/json
+
+{ "fromAccountId": "BE1001", "beneficiaryId": "B1", "amountPaise": 50000, "remarks": "chai" }
+
+### Teaching: make the API slow
+GET {{host}}/dev/chaos?delayMs=3000
+
+### Teaching: make it fail half the time
+GET {{host}}/dev/chaos?failRate=0.5
+
+### Teaching: full outage (503)
+GET {{host}}/dev/chaos?down=true
+
+### Back to normal
+GET {{host}}/dev/chaos/reset
+
+### Teaching: expire every token (next call returns 401)
+GET {{host}}/dev/expire-token
+
+### Logout
+POST {{host}}/auth/logout
+Authorization: Bearer {{token}}
