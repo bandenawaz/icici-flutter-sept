@@ -38,6 +38,9 @@ class SessionNotifier extends Notifier<SessionState> {
   }
 
   void logout() => state = const SessionState();
+
+  /// Used by the 401 interceptor: drop the session without calling the server.
+  void clear() => state = null;
 }
 
 final sessionProvider =

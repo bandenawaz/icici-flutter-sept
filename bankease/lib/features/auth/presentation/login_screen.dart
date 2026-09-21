@@ -1,4 +1,7 @@
+import 'package:bankease/core/errors/bank_error.dart';
+import 'package:bankease/core/network/api_config.dart';
 import 'package:bankease/features/auth/state/seesion_provider.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,24 +37,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _submitting = true);
-    await Future<void>.delayed(
-        const Duration(milliseconds: 800)); // fake server call
-    if (!mounted) return; // the screen may have closed while we waited
-    setState(() => _submitting = false);
-
-    if (_pinController.text != '1234') {
+    try {
+      await ref.read(sessionProvider.notifier).login(
+            customerId: _customerIdController.text,
+            pin: _pinController.text,
+          );
+    } on BankError catch (error) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid customer ID or PIN')),
+        SnackBar(content: Text(error.message)),
       );
-      return;
     }
-
-    // go (not push): login is removed, so Back can't return to it.
-    // context.go(AppRoutes.dashboard);
-    ref.read(sessionProvider.notifier).login(
-          customerId: _customerIdController.text,
-          customerName: 'Customer ${_customerIdController.text}',
-        );
   }
 
   @override
@@ -138,11 +135,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             )
                           : const Text('Log in'),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Demo: any 8-digit customer ID, PIN 1234',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodySmall,
+                    const SizedBox(height: 8),
+                    FilledButton.tonal(
+                      onPressed: () async {
+                        final dio =
+                            Dio(BaseOptions(baseUrl: ApiConfig.baseurl));
+                        try {
+                          final response =
+                              await dio.get<Map<String, dynamic>>('/ping');
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('API says: ${response.data}')),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed: $e')),
+                          );
+                        }
+                      },
+                      child: const Text('Ping the API'),
+                      //   child: child)
+                      // const SizedBox(height: 16),
+                      // Text(
+                      //   'Demo: any 8-digit customer ID, PIN 1234',
+                      //   textAlign: TextAlign.center,
+                      //   style: theme.textTheme.bodySmall,
+                      // ),
                     ),
                   ],
                 ),
